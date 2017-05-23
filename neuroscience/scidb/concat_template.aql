@@ -1,0 +1,28 @@
+--The following is an example of concatenating two half-subjects
+--roughly take 0.5 hour
+
+set no fetch;
+set lang afl;
+
+set fetch;
+op_now();
+set no fetch;
+
+store(
+    repart(
+        merge(
+            original_half_1st, 
+            redimension(
+                apply(original_half_2nd, i3_new, i3+144), 
+                <f0:float not null>[i0=0:144,145,0,i1=0:173,174,0,i2=0:144,145,0,i3_new=0:288,18,0]
+            )
+        )
+        , <f0:float not null>[i0=0:144,145,0,i1=0:173,174,0,i2=0:144,145,0,i3_new=0:288,9,0]
+    )
+    , entire_subject
+);
+
+set fetch;
+op_now();
+set no fetch;
+

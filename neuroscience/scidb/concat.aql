@@ -1,0 +1,76 @@
+--The following is an example of concatenating two half-subjects
+--roughly take 0.5 hour
+
+set lang afl;
+set no fetch;
+
+set fetch;
+op_now();
+set no fetch;
+
+store(
+	repart(
+	    merge(
+		mean_b0, 
+		redimension(
+		    apply(mean_b0, i2_new, i2+145), 
+		    <f0:float not null>[i0=0:144,1000,0,i1=0:173,1000,0,i2_new=0:289,1000,0]
+		)
+	    ),
+	    <f0:float not null>[i0=0:144,145,0, i1=0:173,174,0, i2_new=0:289,145,0]
+	),
+    mean_b0_2
+);
+
+set no fetch;
+store(
+	    merge(
+		mean_b0_2, 
+		redimension(
+		    apply(mean_b0_2, i2_4, i2_new+290), 
+		    <f0:float not null>[i0=0:144,145,0,i1=0:173,174,0,i2_4=0:579,145,0]
+		)
+	    ),
+    mean_b0_4
+);
+
+
+set no fetch;
+store(
+    merge(
+	mean_b0_4, 
+	redimension(
+	    apply(mean_b0_4, i2_8, i2_new+580), 
+	    <f0:float not null>[i0=0:144,145,0,i1=0:173,174,0,i2_8=0:1159,145,0]
+	)
+    ),
+    mean_b0_8
+);
+
+set no fetch;
+store(
+    merge(
+	mean_b0_8, 
+	redimension(
+	    apply(mean_b0_8, i2_16, i2_new+1160), 
+	    <f0:float not null>[i0=0:144,145,0,i1=0:173,174,0,i2_16=0:2319,145,0]
+	)
+    ),
+    mean_b0_16
+);
+
+set no fetch;
+store(
+    merge(
+	mean_b0_8, 
+	redimension(
+	    apply(mean_b0_16, i2_24, i2_new+1160), 
+	    <f0:float not null>[i0=0:144,145,0,i1=0:173,174,0,i2_24=0:3479,145,0]
+	)
+    ),
+    mean_b0_24
+);
+set fetch;
+op_now();
+set no fetch;
+

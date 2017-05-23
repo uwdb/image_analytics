@@ -1,0 +1,29 @@
+--Parse the string outputed by the stream() interface of SciDB
+
+set lang afl;
+
+set no fetch;
+load_library('accelerated_io_tools');
+
+set fetch;
+op_now();
+
+SET NO FETCH;
+store(
+    redimension(
+        apply(
+            parse(denoised_string, 'num_attributes=1', 'chunk_size=256000000')
+            , val, dcast(a0, float(null))
+            , t, line_no/(145*174*145) + source_instance_id*9
+            , x, (line_no%(145*174*145))/(174*145)
+            , y, ((line_no%(145*174*145))/145)%174
+            , z, (line_no%(145*174*145))%145
+        )
+        , <val:float>[x=0:144,29,0, y=0:173,29,0, z=0:144,29,0, t=0:287,288,0]
+    )
+    , denoised_parsed
+);
+
+set fetch;
+op_now();
+

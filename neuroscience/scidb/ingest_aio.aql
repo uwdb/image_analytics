@@ -1,0 +1,27 @@
+SET LANG AFL;
+SET NO FETCH;
+load_library('accelerated_io_tools');
+
+
+--timing for ingest
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+store(
+        aio_input(
+            '/run/shm/mri.csv',
+            'num_attributes=288', 
+            'attribute_delimiter=,',
+            'split_on_dimension=1',
+            'buffer_size=43900199',
+            'chunk_size=43900199'
+        ),
+    temp_10am
+);
+
+
+--timing for reshape
+SET FETCH;
+op_now();
+SET NO FETCH;
