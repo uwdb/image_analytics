@@ -1,0 +1,29 @@
+--parse the scidb string output of patches and save it to PATCH
+
+set lang afl;
+
+set no fetch;
+load_library('accelerated_io_tools');
+
+set fetch;
+op_now();
+
+SET NO FETCH;
+store(
+    redimension(
+        apply(
+            parse(lsst_streamout_patch, 'num_attributes=1', 'chunk_size=256000000')
+            --, val, dcast(a0, float(null))
+            , val, float((line_no % 20) + 1.149 * (line_no % 7)) --TODO: we should use the above values once they are not nan
+            , patch_id, line_no / (2200 * 2200)
+            , x, (line_no % (2200 * 2200)) / 2200
+            , y, (line_no % (2200 * 2200)) % 2200 
+        )
+        , <val:float>[patch_id=0:199,1,0, x=0:2199,2200,0, y=0:2199,2200,0]
+    )
+    , PATCH 
+);
+
+set fetch;
+op_now();
+

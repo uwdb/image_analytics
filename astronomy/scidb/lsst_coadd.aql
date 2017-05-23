@@ -1,0 +1,178 @@
+--Author: dzhao@uw.edu
+--Date: 9/19/2016
+--Reference: https://github.com/uwescience/myria-website/blob/gh-pages/usecases/uw-cat.markdown
+--Peak resource (estimate with 4 scidb processes on 8 cores): 25 GB RAM, 100 GB disk
+
+SET LANG AFL;
+SET NO FETCH;
+load_library('accelerated_io_tools');
+
+--remove old results
+--remove(COADD);
+
+--timing for ingest
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+-------------------------------------
+--load file to tuples: 3 hours, 75 GB
+-------------------------------------
+store(
+    project(
+        apply(
+            aio_input(
+                '/home/ubuntu/scidb_input/lsst_1-24.csv',
+                'num_attributes=4', 
+                'attribute_delimiter=,'
+            ), 
+            x, dcast(a0, int64(0)), y, dcast(a1, int64(0)), 
+            t, dcast(a2, int64(0)), v, dcast(a3, float(.0))
+        ), 
+        x, y, t, v
+    ), 
+    TUPLE
+); 
+
+--timing for reshape
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+---------------------------------------------
+--reshpae tuples to 3-d array: 4 hours, 85 GB
+--for full size (before 2000x): x[13:24], y[10:21], t[1:24]
+---------------------------------------------
+create array RAW <v: float> 
+    --[x=19000:19000,1,0, y=7901:8000,100,0, t=1:2,1,0];
+    [x=1:(24-13+1)*2000,1000,0, y=1:(21-10+1)*2000,1000,0, t=1:24,24,0];
+store(redimension(TUPLE, RAW), RAW); 
+
+--not useful anymore
+remove(TUPLE);
+
+--begin timing for LSST app (avg and stdev): takes about 10.5 hours to finish all 
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+-----------------------------------------------
+-----------------------------------------------
+-------- First Loop 
+-----------------------------------------------
+-----------------------------------------------
+
+------------------------------------------------------------
+--calculate average and standard deviation: 1.5 hours, 88 GB
+------------------------------------------------------------
+store(aggregate(RAW, avg(v) as avg, stdev(v) as stdv, x, y), STAT); 
+
+--timing for join
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+------------------------------------
+--join RAW with STAT: 7 hours, 98 GB
+------------------------------------
+store(cross_join(RAW, STAT, RAW.x, STAT.x, RAW.y, STAT.y), ALLINFO); 
+
+--not useful anymore
+remove(RAW);
+remove(STAT);
+
+--timing for merge
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+---------------------
+--filter out outliers
+---------------------
+store(
+	filter(
+	    ALLINFO, 
+	    v > avg-5*stdv and v < avg+5*stdv
+	),
+    FILTERED
+);
+
+    --not uesful anymore
+    remove(ALLINFO);
+    SET FETCH;
+    op_now();
+    SET NO FETCH;
+
+--non-empty values
+    SET FETCH;
+aggregate(FILTERED, count(v));
+
+    op_now();
+    SET NO FETCH;
+
+-----------------------------------------------
+-----------------------------------------------
+-------- Second Loop: repeat it if necessary
+-----------------------------------------------
+-----------------------------------------------
+
+--avg
+store(aggregate(FILTERED, avg(v) as avg, stdev(v) as stdv, x, y), STAT); 
+
+    SET FETCH;
+    op_now();
+    SET NO FETCH;
+
+--join
+store(cross_join(FILTERED, STAT, FILTERED.x, STAT.x, FILTERED.y, STAT.y), ALLINFO); 
+
+    remove(FILTERED);
+    remove(STAT);
+
+    SET FETCH;
+    op_now();
+    SET NO FETCH;
+
+--filter
+store(
+	filter(
+	    ALLINFO, 
+	    v > avg-5*stdv and v < avg+5*stdv
+	),
+    FILTERED
+);
+
+    remove(ALLINFO);
+
+    SET FETCH;
+    op_now();
+    SET NO FETCH;
+    
+--non-empty values
+    SET FETCH;
+aggregate(FILTERED, count(v));
+
+    op_now();
+    SET NO FETCH;
+
+-----------------------------------------------
+-----------------------------------------------
+-------- Final merge 
+-----------------------------------------------
+-----------------------------------------------
+store(
+    aggregate(
+        FILTERED,
+        sum(v) as coadd, 
+        x, y
+    ),
+    COADD
+); 
+
+--timing: done
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+--not uesful anymore
+remove(FILTERED);

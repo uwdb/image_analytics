@@ -1,0 +1,28 @@
+--parse the scidb string output of coadded pathces and save it to COADD
+
+set lang afl;
+
+set no fetch;
+load_library('accelerated_io_tools');
+
+set fetch;
+op_now();
+
+SET NO FETCH;
+store(
+    redimension(
+        apply(
+            parse(lsst_streamout_coadd, 'num_attributes=1', 'chunk_size=256000000')
+            , val, dcast(a0, float(null))
+            , patch_id, source_instance_id * 15 + chunk_no --(15 <- 29/2 + 1): 29 patches on 2 scidb instances
+            , x, line_no / 2200
+            , y, line_no % 2200 
+        )
+        , <val:float>[patch_id=0:199,1,0, x=0:2199,2200,0, y=0:2199,2200,0]
+    )
+    , COADD 
+);
+
+set fetch;
+op_now();
+

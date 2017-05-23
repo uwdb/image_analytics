@@ -1,0 +1,46 @@
+--Desc:     Parse the stdout stream of SciDB
+--Author:   dzhao@cs.washington.edu
+--Date:     3/6/2017
+
+SET LANG AFL;
+SET NO FETCH;
+load_library('accelerated_io_tools');
+
+--timing for ingest
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+store(
+    redimension(
+        apply(
+            parse(
+                stream_stdout_array,
+                'num_attributes=1'
+            )
+            , x, line_no/2046
+            , y, line_no%2046
+            , v, double(a0)
+        )
+        , <v:double>[source_instance_id=0:1,1,0, chunk_no=0:0,1,0, x=0:4093,1,0, y=0:2045,1,0]
+    )
+    , stream_stdout_parsed
+);
+
+--DFZ: this is too slow to process stream output... it would run forever
+--store(
+--    project(
+--        apply(
+--            cross_join(stream_stdout_array, build(<idx:int64>[i=0:8376323,8376324,0], i)),
+--            val, nth_csv(response,i),
+--            x, i/2046,
+--            y, i%2046
+--       ),
+--        x, y, val 
+--    ),
+--    stream_out_indexed
+--);
+
+--timing for ingest
+SET FETCH;
+op_now();

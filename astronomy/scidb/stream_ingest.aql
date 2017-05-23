@@ -1,0 +1,39 @@
+--Desc:     convert tuples into arrays<flux>[visit, ccd_id, x, y]
+--Author:   dzhao@cs.washington.edu
+--Date:     3/28/2017
+
+SET LANG AFL;
+SET NO FETCH;
+
+load_library('accelerated_io_tools');
+
+--timing for ingest
+SET FETCH;
+op_now();
+SET NO FETCH;
+
+-------------------------------------
+--load file to tuples
+-------------------------------------
+store(
+    redimension(
+        apply(
+            aio_input(
+                '/home/ubuntu/lsst_data/raw/lsst_1_visit.csv',
+                'num_attributes=5', 
+                'attribute_delimiter=,'
+            ),  
+            visit, dcast(a0, int64(0)), ccd_id, dcast(a1, int64(0)),
+            x, dcast(a2, int64(0)), y, dcast(a3, int64(0)), 
+            flux, dcast(a4, float(.0))
+        ),  
+        <flux:float>[visit=1:1,1,0, ccd_id=1:60,1,0, x=0:4093,4094,0, y=0:2045,2046,0]
+    ),  
+    CCDS
+); 
+
+--done
+SET FETCH;
+op_now();
+SET NO FETCH;
+

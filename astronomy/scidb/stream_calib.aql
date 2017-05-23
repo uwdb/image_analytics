@@ -1,0 +1,29 @@
+--parse the scidb string output of exposure calib and save it to CALIB_EXP
+
+set lang afl;
+
+set no fetch;
+load_library('accelerated_io_tools');
+
+set fetch;
+op_now();
+
+SET NO FETCH;
+store(
+    redimension(
+        apply(
+            parse(lsst_streamout_calib, 'num_attributes=1', 'chunk_size=512000000')
+            , val, dcast(a0, float(null))
+            , visit, (chunk_no + source_instance_id * 30) / 60 + 1
+            , ccd, 1 + source_instance_id * 30 + chunk_no
+            , x, line_no / 2046
+            , y, line_no % 2046
+        )
+        , <val:float>[visit=1:1,1,0, ccd=1:60,60,0, x=0:4093,4094,0, y=0:2045,2046,0]
+    )
+    , CALIB_EXP
+);
+
+set fetch;
+op_now();
+
