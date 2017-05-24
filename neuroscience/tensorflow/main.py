@@ -18,27 +18,27 @@ def end_to_end_iteration(sess, tf_cluster, data_ids):
         datasets.append(data)
         gtabs.append(dpg.gradient_table(bvals_path, bvecs_path,
                                         b0_threshold=10))
-    print "Time downloading %.3f" % (time.time() - time_download_start)
+    print("Time downloading %.3f" % (time.time() - time_download_start))
 
     time_filter_start = time.time()
     print("\nImage filtering\n")
     filtered_datasets = dt.parallel_image_filtering(sess, tf_cluster,
                                                     datasets, gtabs,
                                                     n_parts=288)
-    print "Time filtering: %.3fs" % (time.time() - time_filter_start)
+    print("Time filtering: %.3fs" % (time.time() - time_filter_start))
 
     time_mean_start = time.time()
     print("\nMean\n")
     mean_data = dt.parallel_mean(sess, tf_cluster, filtered_datasets,
                                  len(data_ids), n_parts=0)
-    print "Time mean: %.3fs" % (time.time() - time_mean_start)
+    print("Time mean: %.3fs" % (time.time() - time_mean_start))
 
     filtered_datasets = None
 
     time_median_start = time.time()
     print("\nMedian Otsu\n")
     masks = dt.parallel_median_otsu(sess, tf_cluster, mean_data)
-    print "Time median otsu: %.3fs" % (time.time() - time_median_start)
+    print("Time median otsu: %.3fs" % (time.time() - time_median_start))
 
     mean_data = None
 
@@ -47,7 +47,7 @@ def end_to_end_iteration(sess, tf_cluster, data_ids):
     print("\nDenoise\n")
     datasets = dt.parallel_denoise(sess, tf_cluster, datasets, masks,
                                    depth=1)
-    print "Time denoising: %.3fs" % (time.time() - time_denoise_start)
+    print("Time denoising: %.3fs" % (time.time() - time_denoise_start))
 
     print("Start measurement")
     time_model_start = time.time()
@@ -77,7 +77,7 @@ def end_to_end(n_datasets, ip_file_path, stride=8):
             print("Time iteration: %.3fs" % (time.time() - time_iteration))
         tf.reset_default_graph()
 
-    print "Time overall: %.3fs" % (time.time() - time_total_start)
+    print("Time overall: %.3fs" % (time.time() - time_total_start))
 
 
 def measure_mask(n_datasets, ip_file_path):
