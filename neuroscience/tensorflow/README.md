@@ -5,7 +5,7 @@
 
 0.  You may want to use the ami-14cb6c74 (available in W-Oregon) which includes
     a set up distributed TensorFlow 0.11 (bazel) system along with all necessary
-    libraries to run the dipy functions as well (you may need to install sklearn).
+    libraries to run the dipy functions as well (you may need to install skimage).
 
 --
 
